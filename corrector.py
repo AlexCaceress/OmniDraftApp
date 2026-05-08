@@ -17,6 +17,8 @@ load_dotenv()
 
 API_KEY = os.getenv("API_KEY")
 
+print(API_KEY)
+
 client = genai.Client(api_key=API_KEY)
 
 OS_NAME = platform.system()
