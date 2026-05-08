@@ -4,15 +4,18 @@ import pyautogui
 import threading
 import time
 import platform
+import os
 
 from pynput import keyboard
 from google import genai
+from dotenv import load_dotenv
 
 # =========================================================
 # CONFIG
 # =========================================================
+load_dotenv()
 
-API_KEY = "AIzaSyAovAz2RSv6MkBciK7-6vyG8N3d-fC5n9s"
+API_KEY = os.getenv("API_KEY")
 
 client = genai.Client(api_key=API_KEY)
 
@@ -336,13 +339,13 @@ def ejecutar_correccion():
 
         procesando = False
 
-        app.after(
-            3000,
-            lambda: lbl_estado.configure(
-                text="Esperando atajo...",
-                text_color="gray"
-            )
-        )
+        # app.after(
+        #     3000,
+        #     lambda: lbl_estado.configure(
+        #         text="Esperando atajo...",
+        #         text_color="gray"
+        #     )
+        # )
 
 
 # =========================================================
