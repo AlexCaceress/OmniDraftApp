@@ -33,6 +33,36 @@ popup_label = None
 
 teclado = Controller()
 
+listener_actual = None
+
+MI_COLOR_FONDO = "#343638"
+MI_COLOR_HOVER = "#2FA572"
+
+def iniciar_listener(atajo_pynput):
+    global listener_actual
+    
+    if listener_actual is not None:
+        listener_actual.stop()
+        
+    listener_actual = keyboard.GlobalHotKeys({atajo_pynput: al_pulsar_atajo})
+    listener_actual.start()
+
+def cambiar_atajo(*args):
+    modificador = combo_mod.get()
+    letra = combo_letra.get().lower()
+    
+    diccionario_mods = {
+        "Ctrl + Shift": "<ctrl>+<shift>",
+        "Ctrl + Alt": "<ctrl>+<alt>",
+        "Alt + Shift": "<alt>+<shift>"
+    }
+    
+    atajo_pynput = f"{diccionario_mods[modificador]}+{letra}"
+    
+    info.configure(text=f"Selecciona texto en cualquier app\ny pulsa:\n{modificador} + {letra.upper()}")
+    
+    iniciar_listener(atajo_pynput)
+
 
 def mostrar_popup(texto="✍️ Corrigiendo..."):
 
@@ -247,18 +277,11 @@ def al_pulsar_atajo():
         name="AI-CORRECTOR"
     ).start()
 
-
 atajo_teclado = (
     "<cmd>+<shift>+t"
     if OS_NAME == "Darwin"
     else "<ctrl>+<shift>+t"
 )
-
-listener = keyboard.GlobalHotKeys({
-    atajo_teclado: al_pulsar_atajo
-})
-
-listener.start()
 
 ctk.set_appearance_mode("dark")
 
@@ -285,16 +308,16 @@ ctk.CTkLabel(
     text="Tono:"
 ).pack()
 
-combo_tono = ctk.CTkComboBox(
+combo_tono = ctk.CTkOptionMenu(
     app,
     values=[
-        "Profesional",
         "Formal",
         "Informal",
-        "Amigable",
-        "Persuasivo"
     ],
-    width=220
+    width=220,
+    fg_color=MI_COLOR_FONDO,
+    button_color=MI_COLOR_FONDO,
+    button_hover_color=MI_COLOR_HOVER
 )
 
 combo_tono.set("Profesional")
@@ -305,7 +328,7 @@ ctk.CTkLabel(
     text="Idioma:"
 ).pack()
 
-combo_idioma = ctk.CTkComboBox(
+combo_idioma = ctk.CTkOptionMenu(
     app,
     values=[
         "Español",
@@ -314,22 +337,47 @@ combo_idioma = ctk.CTkComboBox(
         "Alemán",
         "Italiano"
     ],
-    width=220
+    width=220,
+    fg_color=MI_COLOR_FONDO,
+    button_color=MI_COLOR_FONDO,
+    button_hover_color=MI_COLOR_HOVER
 )
 
 combo_idioma.set("Español")
 
 combo_idioma.pack(pady=10)
 
-atajo_texto = (
-    "Cmd + Shift + T"
-    if OS_NAME == "Darwin"
-    else "Ctrl + Shift + T"
+ctk.CTkLabel(app, text="Atajo de teclado:").pack(pady=(10, 0))
+
+frame_atajo = ctk.CTkFrame(app, fg_color="transparent")
+frame_atajo.pack(pady=5)
+
+combo_mod = ctk.CTkOptionMenu(
+    frame_atajo, 
+    values=["Ctrl + Shift", "Ctrl + Alt", "Alt + Shift"],
+    width=120,
+    command=cambiar_atajo,
+    fg_color=MI_COLOR_FONDO,
+    button_color=MI_COLOR_FONDO,
+    button_hover_color=MI_COLOR_HOVER
 )
+combo_mod.set("Ctrl + Shift")
+combo_mod.pack(side="left", padx=5)
+
+combo_letra = ctk.CTkOptionMenu(
+    frame_atajo, 
+    values=[chr(i) for i in range(65, 91)], 
+    width=70,
+    command=cambiar_atajo,
+    fg_color=MI_COLOR_FONDO,
+    button_color=MI_COLOR_FONDO,
+    button_hover_color=MI_COLOR_HOVER
+)
+combo_letra.set("K")
+combo_letra.pack(side="left", padx=5)
 
 info = ctk.CTkLabel(
     app,
-    text=f"Selecciona texto en cualquier app\ny pulsa:\n{atajo_texto}",
     text_color="gray",
     font=("Helvetica", 12)
 )
@@ -344,4 +392,6 @@ lbl_estado = ctk.CTkLabel(
 )
 
 lbl_estado.pack(pady=10)
+
+cambiar_atajo()
 app.mainloop()
