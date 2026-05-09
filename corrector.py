@@ -7,12 +7,10 @@ import platform
 import os
 
 from pynput import keyboard
+from pynput.keyboard import Controller, GlobalHotKeys
 from google import genai
 from dotenv import load_dotenv
 
-# =========================================================
-# CONFIG
-# =========================================================
 load_dotenv()
 
 API_KEY = os.getenv("API_KEY")
@@ -25,20 +23,16 @@ OS_NAME = platform.system()
 
 CMD_KEY = "command" if OS_NAME == "Darwin" else "ctrl"
 
-# evita múltiples ejecuciones simultáneas
 procesando = False
 
-# pyautogui optimización
 pyautogui.PAUSE = 0
 pyautogui.FAILSAFE = False
 
-# popup global
 popup = None
 popup_label = None
 
-# =========================================================
-# POPUP FLOTANTE
-# =========================================================
+teclado = Controller()
+
 
 def mostrar_popup(texto="✍️ Corrigiendo..."):
 
@@ -48,20 +42,10 @@ def mostrar_popup(texto="✍️ Corrigiendo..."):
     cerrar_popup()
 
     popup = ctk.CTkToplevel(app)
-
-    # no mostrar barra ventana
     popup.overrideredirect(True)
-
-    # siempre arriba
     popup.attributes("-topmost", True)
-
-    # transparencia
     popup.attributes("-alpha", 0.96)
-
-    # color
     popup.configure(fg_color="#1E1E1E")
-
-    # posición cerca cursor
     x, y = pyautogui.position()
 
     popup.geometry(f"260x60+{x+20}+{y+20}")
@@ -81,7 +65,6 @@ def mostrar_popup(texto="✍️ Corrigiendo..."):
 
     popup.update()
 
-
 def actualizar_popup(texto):
 
     global popup_label
@@ -99,20 +82,14 @@ def cerrar_popup():
     global popup_label
 
     try:
-
         if popup:
             popup.destroy()
-
     except:
         pass
 
     popup = None
     popup_label = None
 
-
-# =========================================================
-# UI STATUS
-# =========================================================
 
 def set_estado(texto, color="gray"):
 
@@ -125,23 +102,18 @@ def set_estado(texto, color="gray"):
     )
 
 
-# =========================================================
-# GEMINI
-# =========================================================
-def corregir_texto_ia(texto, tono, idioma):
-
+def corregir_texto_ia_stream(texto, tono, idioma):
     prompt = f"""Corrige el texto manteniendo significado. Idioma: {idioma} Tono: {tono} Devuelve SOLO el texto final. Texto:{texto}"""
 
-    response = client.models.generate_content(
+    response = client.models.generate_content_stream(
         model="gemini-3.1-flash-lite",
         contents=prompt
     )
 
-    return response.text.strip()
+    for chunk in response:
+        if chunk.text:
+            yield chunk.text
 
-# =========================================================
-# COPIAR TEXTO SELECCIONADO
-# =========================================================
 
 def copiar_texto_seleccionado():
 
@@ -162,23 +134,14 @@ def copiar_texto_seleccionado():
     return None
 
 
-# =========================================================
-# REEMPLAZAR TEXTO
-# =========================================================
-
 def reemplazar_texto(texto):
 
     pyperclip.copy(texto)
 
     time.sleep(0.05)
 
-    # reemplaza la selección actual
     pyautogui.hotkey(CMD_KEY, "v")
 
-
-# =========================================================
-# FUNCIÓN PRINCIPAL
-# =========================================================
 
 def ejecutar_correccion():
 
@@ -190,33 +153,17 @@ def ejecutar_correccion():
     procesando = True
 
     try:
-
-        # -------------------------------------------------
-        # liberar teclas modificadoras
-        # -------------------------------------------------
-
+        time.sleep(0.2) 
         pyautogui.keyUp("shift")
         pyautogui.keyUp("ctrl")
-        pyautogui.keyUp("alt")
-        pyautogui.keyUp("command")
-
-        # -------------------------------------------------
-        # popup
-        # -------------------------------------------------
+        
+        if OS_NAME == "Darwin":
+            pyautogui.keyUp("command")
 
         app.after(
             0,
-            lambda: mostrar_popup("📋 Copiando texto...")
+            lambda: mostrar_popup("Copiando texto...")
         )
-
-        set_estado(
-            "📋 Copiando texto...",
-            "#3498db"
-        )
-
-        # -------------------------------------------------
-        # copiar selección
-        # -------------------------------------------------
 
         texto_original = copiar_texto_seleccionado()
 
@@ -224,11 +171,11 @@ def ejecutar_correccion():
 
             app.after(
                 0,
-                lambda: actualizar_popup("❌ No hay texto seleccionado")
+                lambda: actualizar_popup("No hay texto seleccionado")
             )
 
             set_estado(
-                "❌ No hay texto seleccionado",
+                "No hay texto seleccionado",
                 "#e74c3c"
             )
 
@@ -237,122 +184,60 @@ def ejecutar_correccion():
             app.after(0, cerrar_popup)
 
             return
-
-        # -------------------------------------------------
-        # obtener settings
-        # -------------------------------------------------
-
+        
         tono = combo_tono.get()
         idioma = combo_idioma.get()
 
-        # -------------------------------------------------
-        # popup IA
-        # -------------------------------------------------
-
         app.after(
             0,
-            lambda: actualizar_popup("🧠 Corrigiendo texto...")
+            lambda: actualizar_popup("Escribiendo...")
         )
 
         set_estado(
-            "🧠 Corrigiendo texto...",
+            "Escribiendo en tiempo real...",
             "#3498db"
         )
 
-        # -------------------------------------------------
-        # IA
-        # -------------------------------------------------
-
-        texto_corregido = corregir_texto_ia(
-            texto_original,
-            tono,
-            idioma
-        )
-
-        if not texto_corregido:
-
-            app.after(
-                0,
-                lambda: actualizar_popup("❌ Error generando texto")
-            )
-
-            set_estado(
-                "❌ Error generando texto",
-                "#e74c3c"
-            )
-
-            time.sleep(2)
-
-            app.after(0, cerrar_popup)
-
-            return
-
-        # -------------------------------------------------
-        # reemplazar texto
-        # -------------------------------------------------
+        # Iteramos sobre los pedazos de texto que llegan en vivo
+        try:
+            for chunk in corregir_texto_ia_stream(texto_original, tono, idioma):
+                # Escribimos el pedazo de texto como si fuéramos un humano muy rápido
+                teclado.type(chunk)
+                time.sleep(0.005) # Micropausa para no saturar el buffer del SO
+        except Exception as ia_error:
+            raise Exception(f"Error de IA: {str(ia_error)}")
 
         app.after(
             0,
-            lambda: actualizar_popup("✨ Aplicando cambios...")
+            lambda: actualizar_popup("¡Listo!")
         )
 
         set_estado(
-            "✨ Aplicando cambios...",
-            "#3498db"
-        )
-
-        reemplazar_texto(texto_corregido)
-
-        # -------------------------------------------------
-        # éxito
-        # -------------------------------------------------
-
-        app.after(
-            0,
-            lambda: actualizar_popup("✅ Texto corregido")
-        )
-
-        set_estado(
-            "✅ Texto corregido",
+            "Texto corregido",
             "#2ecc71"
         )
 
         time.sleep(1)
-
         app.after(0, cerrar_popup)
 
     except Exception as e:
 
         app.after(
             0,
-            lambda: mostrar_popup(f"❌ {str(e)}")
+            lambda: mostrar_popup(f"{str(e)}")
         )
 
         set_estado(
-            f"❌ Error: {str(e)}",
+            f"Error: {str(e)}",
             "#e74c3c"
         )
 
         time.sleep(3)
-
         app.after(0, cerrar_popup)
 
     finally:
-
         procesando = False
 
-        # app.after(
-        #     3000,
-        #     lambda: lbl_estado.configure(
-        #         text="Esperando atajo...",
-        #         text_color="gray"
-        #     )
-        # )
-
-
-# =========================================================
-# HOTKEY
-# =========================================================
 
 def al_pulsar_atajo():
 
@@ -364,9 +249,9 @@ def al_pulsar_atajo():
 
 
 atajo_teclado = (
-    "<cmd>+<shift>+k"
+    "<cmd>+<shift>+t"
     if OS_NAME == "Darwin"
-    else "<ctrl>+<shift>+k"
+    else "<ctrl>+<shift>+t"
 )
 
 listener = keyboard.GlobalHotKeys({
@@ -374,11 +259,6 @@ listener = keyboard.GlobalHotKeys({
 })
 
 listener.start()
-
-
-# =========================================================
-# UI
-# =========================================================
 
 ctk.set_appearance_mode("dark")
 
@@ -392,10 +272,6 @@ app.geometry("360x380")
 
 app.attributes("-topmost", True)
 
-# =========================================================
-# TÍTULO
-# =========================================================
-
 titulo = ctk.CTkLabel(
     app,
     text="✨ AI QUICK FIX",
@@ -403,10 +279,6 @@ titulo = ctk.CTkLabel(
 )
 
 titulo.pack(pady=20)
-
-# =========================================================
-# TONO
-# =========================================================
 
 ctk.CTkLabel(
     app,
@@ -426,12 +298,7 @@ combo_tono = ctk.CTkComboBox(
 )
 
 combo_tono.set("Profesional")
-
 combo_tono.pack(pady=10)
-
-# =========================================================
-# IDIOMA
-# =========================================================
 
 ctk.CTkLabel(
     app,
@@ -454,14 +321,10 @@ combo_idioma.set("Español")
 
 combo_idioma.pack(pady=10)
 
-# =========================================================
-# INFO ATAJO
-# =========================================================
-
 atajo_texto = (
-    "Cmd + Shift + K"
+    "Cmd + Shift + T"
     if OS_NAME == "Darwin"
-    else "Ctrl + Shift + K"
+    else "Ctrl + Shift + T"
 )
 
 info = ctk.CTkLabel(
@@ -473,10 +336,6 @@ info = ctk.CTkLabel(
 
 info.pack(pady=20)
 
-# =========================================================
-# ESTADO
-# =========================================================
-
 lbl_estado = ctk.CTkLabel(
     app,
     text="Esperando atajo...",
@@ -485,9 +344,4 @@ lbl_estado = ctk.CTkLabel(
 )
 
 lbl_estado.pack(pady=10)
-
-# =========================================================
-# START
-# =========================================================
-
 app.mainloop()
