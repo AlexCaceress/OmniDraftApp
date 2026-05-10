@@ -2,6 +2,7 @@ import customtkinter as ctk
 import threading
 import time
 import pyautogui
+import pyperclip
 from pynput.keyboard import Controller
 from config.settings import OS_NAME
 from gui.ui_builder import InterfazUsuario
@@ -52,6 +53,8 @@ class AIQuickFixApp(ctk.CTk):
     def _ejecutar_correccion(self):
         if self.procesando: return
         self.procesando = True
+
+        portapapeles_previso = pyperclip.paste()
         
         try:
             time.sleep(0.2)
@@ -93,4 +96,8 @@ class AIQuickFixApp(ctk.CTk):
             time.sleep(3)
             self.after(0, self.popup.cerrar)
         finally:
+            if portapapeles_previso is not None:
+                time.sleep(0.1)
+                pyperclip.copy(portapapeles_previso)
+                
             self.procesando = False
