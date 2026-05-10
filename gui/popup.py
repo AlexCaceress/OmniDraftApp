@@ -8,7 +8,6 @@ class PopupManager:
         self.label = None
 
     def mostrar(self, texto):
-        # Asegurarnos de que no hay uno abierto antes de crear otro
         self.cerrar()
 
         self.window = ctk.CTkToplevel(self.app)
@@ -17,19 +16,20 @@ class PopupManager:
         self.window.attributes("-alpha", 0.96)
         self.window.configure(fg_color="#1E1E1E")
         
-        # Posicionar junto al ratón
         x, y = pyautogui.position()
-        self.window.geometry(f"260x60+{x+20}+{y+20}")
+        
+        self.window.geometry(f"280x75+{x+20}+{y+20}")
 
         self.label = ctk.CTkLabel(
             self.window,
             text=texto,
-            font=("Helvetica", 14, "bold")
+            font=("Helvetica", 14, "bold"),
+            wraplength=240 
         )
         self.label.pack(expand=True, fill="both", padx=20, pady=10)
         
         self.window.update()
-
+        
     def actualizar(self, texto):
         if self.label and self.window:
             self.label.configure(text=texto)

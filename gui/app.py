@@ -3,7 +3,6 @@ import threading
 import time
 import pyautogui
 import pyperclip
-from pynput.keyboard import Controller
 from config.settings import OS_NAME
 from gui.ui_builder import InterfazUsuario
 from gui.tray import GestorBandeja
@@ -11,6 +10,7 @@ from gui.popup import PopupManager
 from ia.corrector import corregir_texto_ia_stream
 from utils.clipboard import copiar_texto_seleccionado
 from hotkeys.listener import iniciar_listener
+from pynput.keyboard import Controller, Listener, Key
 
 class AIQuickFixApp(ctk.CTk):
     def __init__(self):
@@ -65,8 +65,9 @@ class AIQuickFixApp(ctk.CTk):
             self.after(0, lambda: self.popup.mostrar("Escribiendo..."))
             texto_original = copiar_texto_seleccionado()
 
-            if not texto_original:
-                self.ui.set_estado("No hay texto", "#e74c3c")
+            if not texto_original or len(texto_original.strip()) < 2:
+                self.ui.set_estado("Texto no válido", "#e74c3c")
+                self.after(0, lambda: self.popup.mostrar("Texto inválido"))
                 time.sleep(2)
                 self.after(0, self.popup.cerrar)
                 return
@@ -76,28 +77,73 @@ class AIQuickFixApp(ctk.CTk):
             idioma = self.ui.combo_idioma.get()
 
             self.ui.set_estado("Escribiendo...", "#3498db")
+            self.after(0, lambda: self.popup.actualizar("Escribiendo... (Esc para cancelar)"))
+
+            self.cancelar_escritura = False
+
+            def detectar_escape(tecla):
+                if tecla == Key.esc:
+                    self.cancelar_escritura = True
+                    self.ui.set_estado("Cancelado por el usuario", "#e74c3c")
+                    self.after(0, lambda: self.popup.actualizar("Cancelado"))
+                    return False # Esto apaga el listener de pynput
 
             try:
-                for chunk in corregir_texto_ia_stream(texto_original, tono, idioma):
-                    self.teclado.type(chunk)
-                    time.sleep(0.005)
+                # Envolvemos la escritura en un Listener temporal que escucha el teclado
+                with Listener(on_press=detectar_escape) as listener:
+                    for chunk in corregir_texto_ia_stream(texto_original, tono, idioma):
+                        
+                        # Si el usuario pulsó Escape, rompemos el bucle al instante
+                        if self.cancelar_escritura:
+                            break 
+                        
+                        self.teclado.type(chunk)
+                        time.sleep(0.005)
+                        
             except Exception as ia_error:
-                raise Exception(f"Error IA: {str(ia_error)}")
+                if not self.cancelar_escritura:
+                    raise Exception(f"Error IA: {str(ia_error)}")
 
-            self.ui.set_estado("Completado", "#2ecc71")
-            self.after(0, lambda: self.popup.actualizar("¡Listo!"))
+            if not self.cancelar_escritura:
+                self.ui.set_estado("Completado", "#2ecc71")
+                self.after(0, lambda: self.popup.actualizar("¡Listo!"))
+                time.sleep(1)
+            else:
+                time.sleep(0.3) 
             
-            time.sleep(1)
             self.after(0, self.popup.cerrar)
 
         except Exception as e:
-            self.ui.set_estado(f"Error: {str(e)}", "#e74c3c")
-            self.after(0, lambda: self.popup.mostrar(f"Error: {str(e)[:20]}..."))
+            error_msg = str(e).lower()
+            error_type = type(e).__name__.lower() # Capturamos también el tipo de error
+
+            match error_msg:
+                
+                # 1. Errores de Conexión y DNS (Añadimos las palabras reales de fallo de red)
+                case msg if any(k in msg or k in error_type for k in ["getaddrinfo", "resolv", "connect", "network", "host", "unreachable", "timeout"]):
+                    mensaje_amigable = "Sin conexión a Internet"
+
+                # 2. Errores de API Key (Añadimos 401 y 403, que son los de "No autorizado")
+                case msg if any(k in msg for k in ["400", "401", "403", "api key", "unauthorized", "invalid"]):
+                    mensaje_amigable = "Problema con la API Key"
+
+                # 3. Límite de uso (Añadimos "too many requests")
+                case msg if any(k in msg for k in ["429", "quota", "exhausted", "too many requests"]):
+                    mensaje_amigable = "Límite de uso de IA alcanzado"
+
+                # 4. Caso por defecto
+                case _:
+                    mensaje_amigable = "Error temporal de la IA"
+
+            # Actualizamos la interfaz
+            self.ui.set_estado(mensaje_amigable, "#e74c3c")
+            self.after(0, lambda m=mensaje_amigable: self.popup.mostrar(m))
             time.sleep(3)
             self.after(0, self.popup.cerrar)
+
         finally:
             if portapapeles_previso is not None:
                 time.sleep(0.1)
                 pyperclip.copy(portapapeles_previso)
-                
+
             self.procesando = False
