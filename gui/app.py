@@ -27,7 +27,8 @@ class AIQuickFixApp(ctk.CTk):
         self.tray = GestorBandeja(self)
 
         # Configuramos la X para usar la bandeja
-        self.protocol('WM_DELETE_WINDOW', self.tray.ocultar_en_bandeja)
+        self.protocol('WM_DELETE_WINDOW', self.destroy)
+        self.bind("<Unmap>", self.tray.al_minimizar)
         
         # Iniciamos atajo por defecto
         self._cambiar_atajo()

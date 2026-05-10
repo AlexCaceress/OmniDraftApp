@@ -5,6 +5,7 @@ import threading
 class GestorBandeja:
     def __init__(self, app):
         self.app = app
+        self.en_bandeja = False
 
     def crear_icono_dummy(self):
         image = Image.new('RGB', (64, 64), color='#3498db')
@@ -13,6 +14,7 @@ class GestorBandeja:
         return image
 
     def mostrar_ventana(self, icon, item):
+        self.en_bandeja = False
         icon.stop()
         self.app.after(0, self.app.deiconify)
 
@@ -21,6 +23,7 @@ class GestorBandeja:
         self.app.quit()
 
     def ocultar_en_bandeja(self):
+        self.en_bandeja = True
         self.app.withdraw() # Ocultamos la ventana
 
         menu = pystray.Menu(
@@ -30,3 +33,8 @@ class GestorBandeja:
         
         icono = pystray.Icon("AI_Quick_Fix", self.crear_icono_dummy(), "AI Quick Fix", menu)
         threading.Thread(target=icono.run, daemon=True).start()
+
+    def al_minimizar(self, event):
+        if event.widget == self.app and self.app.state() == 'iconic':
+            if not self.en_bandeja:
+                self.ocultar_en_bandeja()
