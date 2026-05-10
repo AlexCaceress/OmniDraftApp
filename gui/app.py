@@ -10,16 +10,19 @@ from gui.popup import PopupManager
 from ia.corrector import corregir_texto_ia_stream
 from utils.clipboard import copiar_texto_seleccionado
 from hotkeys.listener import iniciar_listener
-from pynput.keyboard import Controller, Listener, Key
+from pynput.keyboard import Controller, Key
+from pynput.mouse import Listener as MouseListener
+from pynput.keyboard import Listener as KeyboardListener
 
 class AIQuickFixApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("AI QUICK FIX")
-        self.geometry("360x380")
+        self.geometry("360x450")        
         self.attributes("-topmost", True)
 
         self.procesando = False
+        self.cancelar_escritura = False
         self.teclado = Controller()
 
         # Iniciamos la UI
@@ -50,6 +53,20 @@ class AIQuickFixApp(ctk.CTk):
     def _al_pulsar_atajo(self):
         threading.Thread(target=self._ejecutar_correccion, daemon=True).start()
 
+    def detectar_escape(self, tecla):
+        if tecla == Key.esc:
+            self.cancelar_escritura = True
+            self.ui.set_estado("Cancelado (Tecla ESC)", "#e74c3c")
+            self.after(0, lambda: self.popup.actualizar("Cancelado"))
+            return False
+        
+    def detectar_clics(self, x, y, boton, presionado):
+        if presionado:
+            self.cancelar_escritura = True
+            self.ui.set_estado("Cancelado (Clic detectado)", "#e74c3c")
+            self.after(0, lambda: self.popup.actualizar("Cancelado"))
+            return False
+
     def _ejecutar_correccion(self):
         if self.procesando: return
         self.procesando = True
@@ -72,7 +89,6 @@ class AIQuickFixApp(ctk.CTk):
                 self.after(0, self.popup.cerrar)
                 return
 
-            # Obtenemos los valores de la UI
             tono = self.ui.combo_tono.get()
             idioma = self.ui.combo_idioma.get()
 
@@ -81,24 +97,21 @@ class AIQuickFixApp(ctk.CTk):
 
             self.cancelar_escritura = False
 
-            def detectar_escape(tecla):
-                if tecla == Key.esc:
-                    self.cancelar_escritura = True
-                    self.ui.set_estado("Cancelado por el usuario", "#e74c3c")
-                    self.after(0, lambda: self.popup.actualizar("Cancelado"))
-                    return False # Esto apaga el listener de pynput
-
             try:
-                # Envolvemos la escritura en un Listener temporal que escucha el teclado
-                with Listener(on_press=detectar_escape) as listener:
+                with KeyboardListener(on_press=self.detectar_escape) as k_listener, \
+                     MouseListener(on_click=self.detectar_clics) as m_listener:
+                    
                     for chunk in corregir_texto_ia_stream(texto_original, tono, idioma):
                         
-                        # Si el usuario pulsó Escape, rompemos el bucle al instante
                         if self.cancelar_escritura:
                             break 
                         
-                        self.teclado.type(chunk)
-                        time.sleep(0.005)
+                        # Escribimos letra a letra en lugar de enviar el bloque entero
+                        for letra in chunk:
+                            if self.cancelar_escritura:
+                                break
+                            self.teclado.type(letra)
+                            time.sleep(0.002) # Pausa en cada letra (ajusta este valor si lo quieres más rápido o lento)
                         
             except Exception as ia_error:
                 if not self.cancelar_escritura:
@@ -119,21 +132,21 @@ class AIQuickFixApp(ctk.CTk):
 
             match error_msg:
                 
-                # 1. Errores de Conexión y DNS (Añadimos las palabras reales de fallo de red)
+                # Errores de Conexión y DNS
                 case msg if any(k in msg or k in error_type for k in ["getaddrinfo", "resolv", "connect", "network", "host", "unreachable", "timeout"]):
                     mensaje_amigable = "Sin conexión a Internet"
 
-                # 2. Errores de API Key (Añadimos 401 y 403, que son los de "No autorizado")
+                # Errores de API Key
                 case msg if any(k in msg for k in ["400", "401", "403", "api key", "unauthorized", "invalid"]):
                     mensaje_amigable = "Problema con la API Key"
 
-                # 3. Límite de uso (Añadimos "too many requests")
+                # Límite de uso (Añadimos "too many requests")
                 case msg if any(k in msg for k in ["429", "quota", "exhausted", "too many requests"]):
                     mensaje_amigable = "Límite de uso de IA alcanzado"
 
-                # 4. Caso por defecto
+                # Caso por defecto
                 case _:
-                    mensaje_amigable = "Error temporal de la IA"
+                    mensaje_amigable = error_msg
 
             # Actualizamos la interfaz
             self.ui.set_estado(mensaje_amigable, "#e74c3c")
