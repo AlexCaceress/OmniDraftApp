@@ -1,5 +1,9 @@
-# Punto de entrada de la aplicación
-from gui.app import run_app
+from gui.app import AIQuickFixApp
+import customtkinter as ctk
 
 if __name__ == "__main__":
-    run_app()
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+    
+    app = AIQuickFixApp()
+    app.mainloop()
