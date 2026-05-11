@@ -21,7 +21,7 @@ class AIQuickFixApp(ctk.CTk):
         self.config = cargar_config()
 
         self.title("AI QUICK FIX")
-        self.geometry("360x450")        
+        self.geometry("360x500")        
         self.attributes("-topmost", True)       
 
         self.procesando = False
@@ -36,11 +36,13 @@ class AIQuickFixApp(ctk.CTk):
         self.ui.combo_idioma.set(self.config["idioma"])
         self.ui.combo_mod.set(self.config["atajo_mod"])
         self.ui.combo_letra.set(self.config["atajo_tecla"])
-
+        self.ui.entry_api.insert(0, self.config.get("api_key", ""))
+        
         self._cambiar_atajo()
 
         self.ui.combo_tono.configure(command=self._guardar_configuracion)
         self.ui.combo_idioma.configure(command=self._guardar_configuracion)
+        self.ui.entry_api.bind("<KeyRelease>", self._guardar_configuracion)
 
         self.protocol('WM_DELETE_WINDOW', self.destroy)
         self.bind("<Unmap>", self.tray.al_minimizar)
@@ -52,6 +54,7 @@ class AIQuickFixApp(ctk.CTk):
             "idioma": self.ui.combo_idioma.get(),
             "atajo_mod": self.ui.combo_mod.get(),
             "atajo_tecla": self.ui.combo_letra.get(),
+            "api_key": self.ui.entry_api.get()
         }
         guardar_config(nueva_config)
         self.config = nueva_config

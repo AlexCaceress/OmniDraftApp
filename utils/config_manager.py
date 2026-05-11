@@ -8,7 +8,7 @@ DEFAULT_CONFIG = {
     "idioma": "Español",
     "atajo_mod": "Ctrl + Shift",
     "atajo_tecla": "K",
-    # "api_key": ""
+    "api_key": ""
 }
 
 def cargar_config():
