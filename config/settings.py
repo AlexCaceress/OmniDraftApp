@@ -1,4 +1,3 @@
-# Configuración y constantes globales
 import os
 import platform
 from dotenv import load_dotenv

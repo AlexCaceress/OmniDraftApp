@@ -22,7 +22,7 @@ class InterfazUsuario:
         # Idioma
         ctk.CTkLabel(self.app, text="Idioma:").pack()
         self.combo_idioma = ctk.CTkOptionMenu(
-            self.app, values=["Español", "Inglés", "Francés", "Alemán", "Italiano"], width=220,
+            self.app, values=["Español", "Inglés", "Francés", "Alemán", "Italiano", "Catalan"], width=220,
             fg_color=MI_COLOR_FONDO, button_color=MI_COLOR_FONDO, button_hover_color=MI_COLOR_HOVER
         )
         self.combo_idioma.set("Español")

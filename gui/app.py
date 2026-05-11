@@ -13,29 +13,48 @@ from hotkeys.listener import iniciar_listener
 from pynput.keyboard import Controller, Key
 from pynput.mouse import Listener as MouseListener
 from pynput.keyboard import Listener as KeyboardListener
+from utils.config_manager import cargar_config, guardar_config
 
 class AIQuickFixApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        self.config = cargar_config()
+
         self.title("AI QUICK FIX")
         self.geometry("360x450")        
-        self.attributes("-topmost", True)
+        self.attributes("-topmost", True)       
 
         self.procesando = False
         self.cancelar_escritura = False
         self.teclado = Controller()
 
-        # Iniciamos la UI
         self.popup = PopupManager(self)
         self.ui = InterfazUsuario(self, callback_atajo=self._cambiar_atajo)
         self.tray = GestorBandeja(self)
 
-        # Configuramos la X para usar la bandeja
+        self.ui.combo_tono.set(self.config["tono"])
+        self.ui.combo_idioma.set(self.config["idioma"])
+        self.ui.combo_mod.set(self.config["atajo_mod"])
+        self.ui.combo_letra.set(self.config["atajo_tecla"])
+
+        self._cambiar_atajo()
+
+        self.ui.combo_tono.configure(command=self._guardar_configuracion)
+        self.ui.combo_idioma.configure(command=self._guardar_configuracion)
+
         self.protocol('WM_DELETE_WINDOW', self.destroy)
         self.bind("<Unmap>", self.tray.al_minimizar)
-        
-        # Iniciamos atajo por defecto
-        self._cambiar_atajo()
+
+
+    def _guardar_configuracion(self, valor_seleccionado=None):
+        nueva_config = {
+            "tono": self.ui.combo_tono.get(),
+            "idioma": self.ui.combo_idioma.get(),
+            "atajo_mod": self.ui.combo_mod.get(),
+            "atajo_tecla": self.ui.combo_letra.get(),
+        }
+        guardar_config(nueva_config)
+        self.config = nueva_config
 
     def _cambiar_atajo(self, *args):
         modificador = self.ui.combo_mod.get()
@@ -49,6 +68,7 @@ class AIQuickFixApp(ctk.CTk):
         self.ui.info.configure(text=f"Selecciona texto en cualquier app\ny pulsa:\n{modificador} + {letra.upper()}")
         
         iniciar_listener(atajo_pynput, self._al_pulsar_atajo)
+        self._guardar_configuracion()
 
     def _al_pulsar_atajo(self):
         threading.Thread(target=self._ejecutar_correccion, daemon=True).start()

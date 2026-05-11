@@ -1,4 +1,3 @@
-# Listener de atajos de teclado
 from pynput import keyboard
 
 listener_actual = None
