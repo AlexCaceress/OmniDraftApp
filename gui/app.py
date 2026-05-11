@@ -15,13 +15,13 @@ from pynput.mouse import Listener as MouseListener
 from pynput.keyboard import Listener as KeyboardListener
 from utils.config_manager import cargar_config, guardar_config
 
-class AIQuickFixApp(ctk.CTk):
+class OmniDraftApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.config = cargar_config()
 
-        self.title("AI QUICK FIX")
-        self.geometry("360x500")        
+        self.title("OmniDraft")
+        self.geometry("360x520")        
         self.attributes("-topmost", True)       
 
         self.procesando = False

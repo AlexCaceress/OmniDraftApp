@@ -8,7 +8,7 @@ class InterfazUsuario:
         self.construir_ui()
 
     def construir_ui(self):
-        ctk.CTkLabel(self.app, text="AI QUICK FIX", font=("Helvetica", 22, "bold")).pack(pady=20)
+        ctk.CTkLabel(self.app, text="OmniDraft", font=("Helvetica", 22, "bold")).pack(pady=20)
 
         # Tono
         ctk.CTkLabel(self.app, text="Tono:").pack()
