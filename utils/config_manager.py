@@ -1,7 +1,20 @@
 import json
 import os
 
-CONFIG_FILE = "config.json"
+def obtener_ruta_config():
+    appdata = os.getenv('APPDATA')
+    
+    if not appdata:
+        appdata = os.path.expanduser('~')
+    
+    carpeta_app = os.path.join(appdata, "OmniDraft")
+    
+    if not os.path.exists(carpeta_app):
+        os.makedirs(carpeta_app)
+        
+    return os.path.join(carpeta_app, "config.json")
+
+CONFIG_FILE = obtener_ruta_config()
 
 DEFAULT_CONFIG = {
     "tono": "Profesional",

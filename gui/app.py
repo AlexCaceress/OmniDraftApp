@@ -4,6 +4,7 @@ import time
 import pyautogui
 import pyperclip
 from config.settings import OS_NAME
+from config.settings import obtener_ruta_recurso
 from gui.ui_builder import InterfazUsuario
 from gui.tray import GestorBandeja
 from gui.popup import PopupManager
@@ -22,7 +23,9 @@ class OmniDraftApp(ctk.CTk):
 
         self.title("OmniDraft")
         self.geometry("360x520")        
-        self.attributes("-topmost", True)       
+        self.attributes("-topmost", True)      
+        ruta_icono = obtener_ruta_recurso("assets/icon.ico")
+        self.iconbitmap(ruta_icono) 
 
         self.procesando = False
         self.cancelar_escritura = False

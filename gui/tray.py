@@ -2,13 +2,15 @@ import pystray
 from PIL import Image, ImageDraw
 import threading
 
+from config.settings import obtener_ruta_recurso
+
 class GestorBandeja:
     def __init__(self, app):
         self.app = app
         self.en_bandeja = False
 
     def crear_icono_dummy(self):
-        image = Image.new('RGB', (64, 64), color='#3498db')
+        image = Image.open(obtener_ruta_recurso("assets/icon.ico"))        
         draw = ImageDraw.Draw(image)
         draw.text((15, 20), "AI", fill='white')
         return image
