@@ -21,7 +21,7 @@ DEFAULT_CONFIG = {
     "idioma": "Español",
     "atajo_mod": "Ctrl + Shift",
     "atajo_tecla": "K",
-    "api_key": ""
+    "tutorial_visto": False
 }
 
 def cargar_config():

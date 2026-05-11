@@ -48,31 +48,7 @@ class InterfazUsuario:
         )
         self.combo_letra.set("K")
         self.combo_letra.pack(side="left", padx=5)
-
-        self.label_api = ctk.CTkLabel(self.app, text="API Key del corrector:")
-        self.label_api.pack(pady=(10, 0))
-
-        self.entry_api = ctk.CTkEntry(
-            self.app, 
-            width=220, 
-            placeholder_text="Pega tu clave aquí...", 
-            show="*",
-            justify="center"
-        )
-        self.entry_api.pack(pady=5)
         
-        self.btn_ayuda = ctk.CTkButton(
-            self.app, 
-            text="¿Cómo conseguir una?", 
-            width=120, 
-            height=20,
-            fg_color="transparent", 
-            text_color="#3498db",
-            hover_color="#2c3e50",
-            command=lambda: __import__('webbrowser').open("https://aistudio.google.com/app/apikey")
-        )
-        self.btn_ayuda.pack(pady=(0, 10))
-
         # Textos informativos
         self.info = ctk.CTkLabel(self.app, text_color="gray", font=("Helvetica", 12))
         self.info.pack(pady=(10,5))

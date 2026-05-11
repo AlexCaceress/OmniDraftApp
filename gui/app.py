@@ -15,6 +15,7 @@ from pynput.keyboard import Controller, Key
 from pynput.mouse import Listener as MouseListener
 from pynput.keyboard import Listener as KeyboardListener
 from utils.config_manager import cargar_config, guardar_config
+from gui.tutorial import VentanaTutorial
 
 class OmniDraftApp(ctk.CTk):
     def __init__(self):
@@ -22,7 +23,7 @@ class OmniDraftApp(ctk.CTk):
         self.config = cargar_config()
 
         self.title("OmniDraft")
-        self.geometry("360x520")        
+        self.geometry("360x420")        
         self.attributes("-topmost", True)      
         ruta_icono = obtener_ruta_recurso("assets/icon.ico")
         self.iconbitmap(ruta_icono) 
@@ -39,17 +40,24 @@ class OmniDraftApp(ctk.CTk):
         self.ui.combo_idioma.set(self.config["idioma"])
         self.ui.combo_mod.set(self.config["atajo_mod"])
         self.ui.combo_letra.set(self.config["atajo_tecla"])
-        self.ui.entry_api.insert(0, self.config.get("api_key", ""))
-        
+
         self._cambiar_atajo()
+
+        if not self.config.get("tutorial_visto", False):
+         self.after(500, self.mostrar_tutorial)
 
         self.ui.combo_tono.configure(command=self._guardar_configuracion)
         self.ui.combo_idioma.configure(command=self._guardar_configuracion)
-        self.ui.entry_api.bind("<KeyRelease>", self._guardar_configuracion)
 
         self.protocol('WM_DELETE_WINDOW', self.destroy)
         self.bind("<Unmap>", self.tray.al_minimizar)
 
+    def mostrar_tutorial(self):
+     def al_terminar_tutorial():
+         self.config["tutorial_visto"] = True
+         guardar_config(self.config)
+
+     VentanaTutorial(self, on_completado=al_terminar_tutorial)
 
     def _guardar_configuracion(self, valor_seleccionado=None):
         nueva_config = {
@@ -57,7 +65,7 @@ class OmniDraftApp(ctk.CTk):
             "idioma": self.ui.combo_idioma.get(),
             "atajo_mod": self.ui.combo_mod.get(),
             "atajo_tecla": self.ui.combo_letra.get(),
-            "api_key": self.ui.entry_api.get()
+            "tutorial_visto": self.config.get("tutorial_visto", False)
         }
         guardar_config(nueva_config)
         self.config = nueva_config
