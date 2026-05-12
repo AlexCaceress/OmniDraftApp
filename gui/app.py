@@ -23,7 +23,7 @@ class OmniDraftApp(ctk.CTk):
         self.config = cargar_config()
 
         self.title("OmniDraft")
-        self.geometry("360x420")        
+        self.geometry("380x550")        
         self.attributes("-topmost", True)      
         ruta_icono = obtener_ruta_recurso("assets/icon.ico")
         self.iconbitmap(ruta_icono) 
@@ -79,7 +79,7 @@ class OmniDraftApp(ctk.CTk):
             "Alt + Shift": "<alt>+<shift>"
         }
         atajo_pynput = f"{diccionario_mods[modificador]}+{letra}"
-        self.ui.info.configure(text=f"Selecciona texto en cualquier app\ny pulsa:\n{modificador} + {letra.upper()}")
+        self.ui.atajo.configure(text=f"{modificador} + {letra.upper()}")
         
         iniciar_listener(atajo_pynput, self._al_pulsar_atajo)
         self._guardar_configuracion()
@@ -113,12 +113,12 @@ class OmniDraftApp(ctk.CTk):
             pyautogui.keyUp("ctrl")
             if OS_NAME == "Darwin": pyautogui.keyUp("command")
 
-            self.after(0, lambda: self.popup.mostrar("Escribiendo..."))
+            self.after(0, lambda: self.popup.mostrar("Typing..."))
             texto_original = copiar_texto_seleccionado()
 
             if not texto_original or len(texto_original.strip()) < 2:
-                self.ui.set_estado("Texto no válido", "#e74c3c")
-                self.after(0, lambda: self.popup.mostrar("Texto inválido"))
+                self.ui.set_estado("Invalid text", "#e74c3c")
+                self.after(0, lambda: self.popup.mostrar("Invalid text"))
                 time.sleep(2)
                 self.after(0, self.popup.cerrar)
                 return
@@ -126,8 +126,8 @@ class OmniDraftApp(ctk.CTk):
             tono = self.ui.combo_tono.get()
             idioma = self.ui.combo_idioma.get()
 
-            self.ui.set_estado("Escribiendo...", "#3498db")
-            self.after(0, lambda: self.popup.actualizar("Escribiendo... (Esc para cancelar)"))
+            self.ui.set_estado("Typing...", "#3498db")
+            self.after(0, lambda: self.popup.actualizar("Typing... (Esc to cancel)"))
 
             self.cancelar_escritura = False
 
@@ -145,40 +145,34 @@ class OmniDraftApp(ctk.CTk):
                             if self.cancelar_escritura:
                                 break
                             self.teclado.type(letra)
-                            time.sleep(0.002) # Pausa en cada letra (ajusta este valor si lo quieres más rápido o lento)
+                            time.sleep(0.002) # Pause per letter (adjust for speed)
                         
             except Exception as ia_error:
                 if not self.cancelar_escritura:
-                    raise Exception(f"Error IA: {str(ia_error)}")
+                    raise Exception(f"AI Error: {str(ia_error)}")
 
             if not self.cancelar_escritura:
-                self.ui.set_estado("Completado", "#2ecc71")
-                self.after(0, lambda: self.popup.actualizar("¡Listo!"))
+                self.ui.set_estado("Completed", "#2ecc71")
+                self.after(0, lambda: self.popup.actualizar("Done!"))
                 time.sleep(1)
             else:
-                time.sleep(0.3) 
-            
-            self.after(0, self.popup.cerrar)
+                time.sleep(0.3)
 
         except Exception as e:
             error_msg = str(e).lower()
-            error_type = type(e).__name__.lower() # Capturamos también el tipo de error
+            error_type = type(e).__name__.lower()
 
             match error_msg:
                 
-                # Errores de Conexión y DNS
                 case msg if any(k in msg or k in error_type for k in ["getaddrinfo", "resolv", "connect", "network", "host", "unreachable", "timeout"]):
-                    mensaje_amigable = "Sin conexión a Internet"
+                    mensaje_amigable = "No Internet connection"
 
-                # Errores de API Key
                 case msg if any(k in msg for k in ["400", "401", "403", "api key", "unauthorized", "invalid"]):
-                    mensaje_amigable = "Problema con la API Key"
+                    mensaje_amigable = "API Key problem"
 
-                # Límite de uso (Añadimos "too many requests")
                 case msg if any(k in msg for k in ["429", "quota", "exhausted", "too many requests"]):
-                    mensaje_amigable = "Límite de uso de IA alcanzado"
+                    mensaje_amigable = "AI usage limit reached"
 
-                # Caso por defecto
                 case _:
                     mensaje_amigable = error_msg
 
@@ -192,5 +186,8 @@ class OmniDraftApp(ctk.CTk):
             if portapapeles_previso is not None:
                 time.sleep(0.1)
                 pyperclip.copy(portapapeles_previso)
+
+            self.ui.set_estado("Waiting for shortcut...")
+            self.after(0, self.popup.cerrar)
 
             self.procesando = False

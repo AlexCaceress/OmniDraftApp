@@ -3,7 +3,7 @@ import customtkinter as ctk
 class VentanaTutorial(ctk.CTkToplevel):
     def __init__(self, master, on_completado):
         super().__init__(master)
-        self.title("OmniDraft - Primeros pasos")
+        self.title("OmniDraft - Getting Started")
         # Un poco más alta para dar espacio a los saltos de línea
         self.geometry("420x400") 
         self.resizable(False, False)
@@ -17,18 +17,18 @@ class VentanaTutorial(ctk.CTkToplevel):
         self.pasos = [
             {
                 "icono": "✨",
-                "titulo": "Bienvenido a OmniDraft", 
-                "texto": "El asistente de IA que corrige, traduce y mejora tus textos.\n\nActúa directamente donde estés escribiendo, sin necesidad de copiar y pegar en otras ventanas."
+                "titulo": "Welcome to OmniDraft",
+                "texto": "The AI assistant that corrects, translates, and improves your texts.\n\nIt works directly where you are writing, no need to copy and paste into other windows."
             },
             {
                 "icono": "⚡",
-                "titulo": "Selecciona y Pulsa", 
-                "texto": "1. Selecciona texto en cualquier app (Word, Chrome...)\n\n2. Pulsa tu atajo de teclado.\n\n3. OmniDraft lo reescribirá al instante."
+                "titulo": "Select and Press",
+                "texto": "1. Select text in any app (Word, Chrome...)\n\n2. Press your keyboard shortcut.\n\n3. OmniDraft will instantly rewrite it."
             },
             {
                 "icono": "🎨",
-                "titulo": "Todo a tu gusto", 
-                "texto": "Personaliza el tono y el idioma en la ventana principal.\n\nAl minimizar la app, seguirá funcionando en segundo plano minimizada junto al reloj de Windows."
+                "titulo": "Everything to your liking",
+                "texto": "Customize the tone and language in the main window.\n\nWhen you minimize the app, it will keep working in the background next to the Windows clock."
             }
         ]
         self.paso_actual = 0
@@ -46,13 +46,13 @@ class VentanaTutorial(ctk.CTkToplevel):
         self.lbl_icono.pack(pady=(10, 10))
 
         # Título principal
-        self.lbl_titulo = ctk.CTkLabel(self.main_frame, font=("Helvetica", 22, "bold"))
+        self.lbl_titulo = ctk.CTkLabel(self.main_frame, font=("Segoe UI", 22, "bold"))
         self.lbl_titulo.pack(pady=(0, 20))
 
         # Texto descriptivo (Aumentamos un poco la fuente y el padding)
         self.lbl_texto = ctk.CTkLabel(
             self.main_frame, 
-            font=("Helvetica", 15), 
+            font=("Segoe UI", 15), 
             text_color="#ced4da", 
             wraplength=340, 
             justify="center"
@@ -65,9 +65,9 @@ class VentanaTutorial(ctk.CTkToplevel):
 
         # Botón Omitir (Izquierda)
         self.btn_omitir = ctk.CTkButton(
-            self.bottom_frame, text="Omitir", width=60, 
+            self.bottom_frame, text="Skip", width=60, 
             fg_color="transparent", text_color="#6c757d", 
-            hover_color="#343a40", font=("Helvetica", 13, "underline"),
+            hover_color="#343a40", font=("Segoe UI", 13, "underline"),
             command=self.finalizar
         )
         self.btn_omitir.pack(side="left")
@@ -78,16 +78,16 @@ class VentanaTutorial(ctk.CTkToplevel):
 
         # Botón Atrás (Se mostrará u ocultará dinámicamente)
         self.btn_atras = ctk.CTkButton(
-            self.right_frame, text="Atrás", width=60, 
+            self.right_frame, text="Back", width=60, 
             fg_color="transparent", text_color="#ced4da", 
-            hover_color="#343a40", font=("Helvetica", 14),
+            hover_color="#343a40", font=("Segoe UI", 14),
             command=self.anterior
         )
         
         # Botón Siguiente
         self.btn_siguiente = ctk.CTkButton(
-            self.right_frame, text="Siguiente ➔", width=110, height=36,
-            font=("Helvetica", 14, "bold"),
+            self.right_frame, text="Next ➔", width=110, height=36,
+            font=("Segoe UI", 14, "bold"),
             command=self.siguiente
         )
         self.btn_siguiente.pack(side="right")
@@ -95,7 +95,7 @@ class VentanaTutorial(ctk.CTkToplevel):
         # Indicador de progreso (Centro)
         self.frame_puntos = ctk.CTkFrame(self.bottom_frame, fg_color="transparent")
         self.frame_puntos.pack(side="left", expand=True)
-        self.lbl_puntos = ctk.CTkLabel(self.frame_puntos, text="", font=("Helvetica", 18), text_color="#495057")
+        self.lbl_puntos = ctk.CTkLabel(self.frame_puntos, text="", font=("Segoe UI", 18), text_color="#495057")
         self.lbl_puntos.pack()
 
     def actualizar_pantalla(self):
@@ -117,9 +117,9 @@ class VentanaTutorial(ctk.CTkToplevel):
         
         # Cambiar el estilo del botón si es el último paso
         if self.paso_actual == len(self.pasos) - 1:
-            self.btn_siguiente.configure(text="Empezar ✨", fg_color="#2FA572", hover_color="#248259")
+            self.btn_siguiente.configure(text="Start ✨", fg_color="#2FA572", hover_color="#248259")
         else:
-            self.btn_siguiente.configure(text="Siguiente ➔", fg_color=["#3B8ED0", "#1F6AA5"], hover_color=["#36719F", "#144870"])
+            self.btn_siguiente.configure(text="Next ➔", fg_color=["#3B8ED0", "#1F6AA5"], hover_color=["#36719F", "#144870"])
 
     def anterior(self):
         if self.paso_actual > 0:
