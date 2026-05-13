@@ -29,7 +29,7 @@ class GestorBandeja:
         self.app.withdraw() # Ocultamos la ventana
 
         menu = pystray.Menu(
-            pystray.MenuItem('Abrir Panel', self.mostrar_ventana),
+            pystray.MenuItem('Abrir Panel', self.mostrar_ventana, default=True),
             pystray.MenuItem('Salir', self.salir_del_programa)
         )
         
