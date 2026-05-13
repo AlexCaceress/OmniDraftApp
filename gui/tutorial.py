@@ -1,4 +1,6 @@
 import customtkinter as ctk
+from config.settings import obtener_ruta_recurso
+
 
 class VentanaTutorial(ctk.CTkToplevel):
     def __init__(self, master, on_completado):
@@ -10,6 +12,8 @@ class VentanaTutorial(ctk.CTkToplevel):
         self.attributes("-topmost", True)
         # Bloquea la ventana principal hasta que se cierre esta
         self.grab_set() 
+        ruta_icono = obtener_ruta_recurso("assets/icon.ico")
+        self.after(200, lambda: self.iconbitmap(ruta_icono))
         
         self.on_completado = on_completado
         

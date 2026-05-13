@@ -67,7 +67,7 @@ class InterfazUsuario:
         self.info = ctk.CTkLabel(self.app, text="Select any text and press:", text_color="gray", font=("Segoe UI", 13))
         self.info.pack(pady=(20, 0))
 
-        self.atajo = ctk.CTkLabel(self.app, text_color="#3B8ED0", font=("Segoe UI", 14, "bold"))
+        self.atajo = ctk.CTkLabel(self.app, text_color=MI_COLOR_HOVER, font=("Segoe UI", 14, "bold"))
         self.atajo.pack(pady=2)
 
         self.lbl_estado = ctk.CTkLabel(
