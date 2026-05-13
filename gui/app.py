@@ -3,7 +3,7 @@ import threading
 import time
 import pyautogui
 import pyperclip
-from config.settings import OS_NAME
+from config.settings import MI_COLOR_HOVER, OS_NAME
 from config.settings import obtener_ruta_recurso
 from gui.ui_builder import InterfazUsuario
 from gui.tray import GestorBandeja
@@ -115,7 +115,7 @@ class OmniDraftApp(ctk.CTk):
 
             self.after(0, lambda: self.popup.mostrar("Typing..."))
             texto_original = copiar_texto_seleccionado()
-
+            
             if not texto_original or len(texto_original.strip()) < 2:
                 self.ui.set_estado("Invalid text", "#e74c3c")
                 self.after(0, lambda: self.popup.mostrar("Invalid text"))
@@ -126,7 +126,7 @@ class OmniDraftApp(ctk.CTk):
             tono = self.ui.combo_tono.get()
             idioma = self.ui.combo_idioma.get()
 
-            self.ui.set_estado("Typing...", "#3498db")
+            self.ui.set_estado("Typing...", MI_COLOR_HOVER)
             self.after(0, lambda: self.popup.actualizar("Typing... (Esc to cancel)"))
 
             self.cancelar_escritura = False
@@ -136,16 +136,27 @@ class OmniDraftApp(ctk.CTk):
                      MouseListener(on_click=self.detectar_clics) as m_listener:
                     
                     for chunk in corregir_texto_ia_stream(texto_original, tono, idioma):
-                        
-                        if self.cancelar_escritura:
-                            break 
-                        
-                        # Escribimos letra a letra en lugar de enviar el bloque entero
+                                         
+                        if self.cancelar_escritura: 
+                            break
+                              
                         for letra in chunk:
                             if self.cancelar_escritura:
                                 break
-                            self.teclado.type(letra)
-                            time.sleep(0.002) # Pause per letter (adjust for speed)
+                            
+                            if letra == ' ':
+                                self.teclado.press(Key.space)
+                                self.teclado.release(Key.space)
+                            elif letra == '\n':
+                                self.teclado.press(Key.enter)
+                                self.teclado.release(Key.enter)
+                            elif letra == '\t':
+                                self.teclado.press(Key.tab)
+                                self.teclado.release(Key.tab)
+                            else:
+                                self.teclado.type(letra)
+                            
+                            time.sleep(0.020)
                         
             except Exception as ia_error:
                 if not self.cancelar_escritura:
@@ -168,15 +179,15 @@ class OmniDraftApp(ctk.CTk):
                     mensaje_amigable = "No Internet connection"
 
                 case msg if any(k in msg for k in ["400", "401", "403", "api key", "unauthorized", "invalid"]):
-                    mensaje_amigable = "API Key problem"
+                    mensaje_amigable = "A new version is available! Download it to continue using the app."
 
                 case msg if any(k in msg for k in ["429", "quota", "exhausted", "too many requests"]):
                     mensaje_amigable = "AI usage limit reached"
 
                 case _:
-                    mensaje_amigable = error_msg
+                    mensaje_amigable = "Error running the model, please try again later."
 
-            # Actualizamos la interfaz
+            print(f"Error al ejecutar el modelo: {error_msg} + {error_type}")
             self.ui.set_estado(mensaje_amigable, "#e74c3c")
             self.after(0, lambda m=mensaje_amigable: self.popup.mostrar(m))
             time.sleep(3)
