@@ -1,8 +1,12 @@
+import uuid
+
 import customtkinter as ctk
 import threading
 import time
 import pyautogui
 import pyperclip
+import requests
+import threading
 from config.settings import MI_COLOR_HOVER, OS_NAME
 from config.settings import obtener_ruta_recurso
 from gui.ui_builder import InterfazUsuario
@@ -16,6 +20,7 @@ from pynput.mouse import Listener as MouseListener
 from pynput.keyboard import Listener as KeyboardListener
 from utils.config_manager import cargar_config, guardar_config
 from gui.tutorial import VentanaTutorial
+from utils.logger import SupabaseLogger
 
 class OmniDraftApp(ctk.CTk):
     def __init__(self):
@@ -35,6 +40,8 @@ class OmniDraftApp(ctk.CTk):
         self.popup = PopupManager(self)
         self.ui = InterfazUsuario(self, callback_atajo=self._cambiar_atajo)
         self.tray = GestorBandeja(self)
+        self.logger = SupabaseLogger(self.config["user_id"])
+        self.logger.enviar_log("App Iniciada")
 
         self.ui.combo_tono.set(self.config["tono"])
         self.ui.combo_idioma.set(self.config["idioma"])
@@ -65,7 +72,8 @@ class OmniDraftApp(ctk.CTk):
             "idioma": self.ui.combo_idioma.get(),
             "atajo_mod": self.ui.combo_mod.get(),
             "atajo_tecla": self.ui.combo_letra.get(),
-            "tutorial_visto": self.config.get("tutorial_visto", False)
+            "tutorial_visto": self.config.get("tutorial_visto", False),
+            "user_id": self.config.get("user_id", str(uuid.uuid4()))
         }
         guardar_config(nueva_config)
         self.config = nueva_config
@@ -85,11 +93,13 @@ class OmniDraftApp(ctk.CTk):
         self._guardar_configuracion()
 
     def _al_pulsar_atajo(self):
+        self.logger.enviar_log("Atajo Pulsado")
         threading.Thread(target=self._ejecutar_correccion, daemon=True).start()
 
     def detectar_escape(self, tecla):
         if tecla == Key.esc:
             self.cancelar_escritura = True
+            self.logger.enviar_log("Cancelado por Usuario (ESC)")
             self.ui.set_estado("Cancelado (Tecla ESC)", "#e74c3c")
             self.after(0, lambda: self.popup.actualizar("Cancelado"))
             return False
@@ -97,6 +107,7 @@ class OmniDraftApp(ctk.CTk):
     def detectar_clics(self, x, y, boton, presionado):
         if presionado:
             self.cancelar_escritura = True
+            self.logger.enviar_log("Cancelado por Usuari (Clic)")
             self.ui.set_estado("Cancelado (Clic detectado)", "#e74c3c")
             self.after(0, lambda: self.popup.actualizar("Cancelado"))
             return False
@@ -163,6 +174,7 @@ class OmniDraftApp(ctk.CTk):
                     raise Exception(f"AI Error: {str(ia_error)}")
 
             if not self.cancelar_escritura:
+                self.logger.enviar_log("Texto Completado")
                 self.ui.set_estado("Completed", "#2ecc71")
                 self.after(0, lambda: self.popup.actualizar("Done!"))
                 time.sleep(1)
@@ -188,6 +200,7 @@ class OmniDraftApp(ctk.CTk):
                     mensaje_amigable = "Error running the model, please try again later."
 
             print(f"Error al ejecutar el modelo: {error_msg} + {error_type}")
+            self.logger.enviar_log("Error de IA")
             self.ui.set_estado(mensaje_amigable, "#e74c3c")
             self.after(0, lambda m=mensaje_amigable: self.popup.mostrar(m))
             time.sleep(3)

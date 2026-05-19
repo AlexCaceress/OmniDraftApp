@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 
 def obtener_ruta_config():
     appdata = os.getenv('APPDATA')
@@ -21,7 +22,8 @@ DEFAULT_CONFIG = {
     "idioma": "Español",
     "atajo_mod": "Ctrl + Shift",
     "atajo_tecla": "K",
-    "tutorial_visto": False
+    "tutorial_visto": False,
+    "user_id": str(uuid.uuid4())
 }
 
 def cargar_config():
