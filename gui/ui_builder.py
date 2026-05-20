@@ -1,5 +1,6 @@
 import customtkinter as ctk
-from config.settings import MI_COLOR_FONDO, MI_COLOR_HOVER
+from config.settings import MI_COLOR_FONDO, MI_COLOR_HOVER, obtener_ruta_recurso
+from PIL import Image
 
 class InterfazUsuario:
     def __init__(self, app, callback_atajo):
@@ -8,7 +9,29 @@ class InterfazUsuario:
         self.construir_ui()
 
     def construir_ui(self):
-        # 1. Cabecera elegante
+        ruta_icono_ajustes = obtener_ruta_recurso("assets/settings.png")
+        
+        self.img_ajustes = ctk.CTkImage(
+            light_image=Image.open(ruta_icono_ajustes),
+            dark_image=Image.open(ruta_icono_ajustes),
+            size=(17, 17) # Tamaño visual del icono
+        )
+
+        self.btn_ajustes = ctk.CTkButton(
+            self.app,
+            text="",
+            image=self.img_ajustes,
+            width=25,
+            height=25,
+            fg_color="transparent",
+            text_color="#888888",
+            hover_color="#333333",
+            command=self.app.abrir_ajustes
+        )
+
+        self.btn_ajustes.place(x=10, y=10)
+
+
         ctk.CTkLabel(
             self.app, 
             text="OmniDraft", 

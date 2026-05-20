@@ -23,7 +23,8 @@ DEFAULT_CONFIG = {
     "atajo_mod": "Ctrl + Shift",
     "atajo_tecla": "K",
     "tutorial_visto": False,
-    "user_id": str(uuid.uuid4())
+    "user_id": str(uuid.uuid4()),
+    "custom_api_key": ""
 }
 
 def cargar_config():

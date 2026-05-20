@@ -9,6 +9,7 @@ import requests
 import threading
 from config.settings import MI_COLOR_HOVER, OS_NAME
 from config.settings import obtener_ruta_recurso
+from gui.config_popup import ConfigPopup
 from gui.ui_builder import InterfazUsuario
 from gui.tray import GestorBandeja
 from gui.popup import PopupManager
@@ -38,7 +39,7 @@ class OmniDraftApp(ctk.CTk):
         self.teclado = Controller()
 
         self.popup = PopupManager(self)
-        self.ui = InterfazUsuario(self, callback_atajo=self._cambiar_atajo)
+        self.ui = InterfazUsuario(self, callback_atajo=self._cambiar_atajo,)
         self.tray = GestorBandeja(self)
         self.logger = SupabaseLogger(self.config["user_id"])
         self.logger.enviar_log("App Iniciada")
@@ -59,6 +60,9 @@ class OmniDraftApp(ctk.CTk):
         self.protocol('WM_DELETE_WINDOW', self.destroy)
         self.bind("<Unmap>", self.tray.al_minimizar)
 
+    def abrir_ajustes(self):
+        ConfigPopup(self)
+
     def mostrar_tutorial(self):
      def al_terminar_tutorial():
          self.config["tutorial_visto"] = True
@@ -73,7 +77,8 @@ class OmniDraftApp(ctk.CTk):
             "atajo_mod": self.ui.combo_mod.get(),
             "atajo_tecla": self.ui.combo_letra.get(),
             "tutorial_visto": self.config.get("tutorial_visto", False),
-            "user_id": self.config.get("user_id", str(uuid.uuid4()))
+            "user_id": self.config.get("user_id", str(uuid.uuid4())),
+            "custom_api_key": self.config.get("custom_api_key", "")
         }
         guardar_config(nueva_config)
         self.config = nueva_config
@@ -136,6 +141,7 @@ class OmniDraftApp(ctk.CTk):
 
             tono = self.ui.combo_tono.get()
             idioma = self.ui.combo_idioma.get()
+            key_usuario = self.config.get("custom_api_key", "")
 
             self.ui.set_estado("Typing...", MI_COLOR_HOVER)
             self.after(0, lambda: self.popup.actualizar("Typing... (Esc to cancel)"))
@@ -146,7 +152,7 @@ class OmniDraftApp(ctk.CTk):
                 with KeyboardListener(on_press=self.detectar_escape) as k_listener, \
                      MouseListener(on_click=self.detectar_clics) as m_listener:
                     
-                    for chunk in corregir_texto_ia_stream(texto_original, tono, idioma):
+                    for chunk in corregir_texto_ia_stream(texto_original, tono, idioma, key_usuario):
                                          
                         if self.cancelar_escritura: 
                             break
@@ -184,6 +190,7 @@ class OmniDraftApp(ctk.CTk):
         except Exception as e:
             error_msg = str(e).lower()
             error_type = type(e).__name__.lower()
+            usando_clave_propia = bool(self.config.get("custom_api_key", "").strip())
 
             match error_msg:
                 
@@ -191,10 +198,16 @@ class OmniDraftApp(ctk.CTk):
                     mensaje_amigable = "No Internet connection"
 
                 case msg if any(k in msg for k in ["400", "401", "403", "api key", "unauthorized", "invalid"]):
-                    mensaje_amigable = "A new version is available! Download it to continue using the app."
-
+                    if usando_clave_propia:
+                        mensaje_amigable = "Invalid Custom API Key. Please check your settings."
+                    else:
+                        mensaje_amigable = "Servers saturated. Update the app, or add your own API Key in Settings to continue normally."
+                
                 case msg if any(k in msg for k in ["429", "quota", "exhausted", "too many requests"]):
-                    mensaje_amigable = "AI usage limit reached"
+                    if usando_clave_propia:
+                        mensaje_amigable = "Your API Key quota reached. Check Google AI Studio."
+                    else:
+                        mensaje_amigable = "App usage limit reached. Add your own API Key in Settings."
 
                 case _:
                     mensaje_amigable = "Error running the model, please try again later."
