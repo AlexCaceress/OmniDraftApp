@@ -161,19 +161,19 @@ class OmniDraftApp(ctk.CTk):
                             if self.cancelar_escritura:
                                 break
                             
-                            # 1. Ignoramos el carácter fantasma de Windows
                             if letra == '\r':
                                 continue
                             
                             if letra == ' ':
                                 self.teclado.press(Key.space)
                                 self.teclado.release(Key.space)
-                            elif letra == '\n':
-                                # 2. LA MAGIA: Shift + Enter para saltos limpios sin márgenes de Gmail
+                            
+                            elif letra == '¶' or letra == '\n':
                                 self.teclado.press(Key.shift)
                                 self.teclado.press(Key.enter)
                                 self.teclado.release(Key.enter)
                                 self.teclado.release(Key.shift)
+                                
                             elif letra == '\t':
                                 self.teclado.press(Key.tab)
                                 self.teclado.release(Key.tab)
